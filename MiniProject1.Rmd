@@ -20,8 +20,15 @@ output:
 airbnb <- read.csv("https://www.macalester.edu/~ajohns24/data/NYC_airbnb_kaggle.csv")
 nbhd <- read.csv("https://www.macalester.edu/~ajohns24/data/NYC_nbhd_kaggle.csv")
 airbnb_complete <- left_join(nbhd, airbnb, by = c("neighbourhood" = "neighbourhood_cleansed"))
+dim(airbnb_complete)
 ```
 
+deal witht the data
+```{r}
+airbnb_complete <- airbnb_complete %>% 
+  filter(price <= 1000)
+dim(airbnb_complete)
+```
 
 
 \

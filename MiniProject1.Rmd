@@ -1,0 +1,14 @@
+---
+title: "MiniProject1"
+author: "Tan Zhenggang, Debbie Sun"
+date: "10/3/2019"
+output: html_document
+---
+
+
+```{r}
+library(ggplot2)
+library(caret)
+
+```
+

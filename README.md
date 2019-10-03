@@ -1,1 +1,4 @@
 # STAT253_MiniProject1
+neawsdfg
+sdfjklsdghlefrlskdjfhhglsgjhsjflsdfjlasefh
+sdfaksdjflgashglshflsdfa

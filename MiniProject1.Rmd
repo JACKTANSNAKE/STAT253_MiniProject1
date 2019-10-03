@@ -26,7 +26,7 @@ dim(airbnb_complete)
 deal witht the data
 ```{r}
 airbnb_complete <- airbnb_complete %>% 
-  filter(price <= 1000)
+  filter(price < 1000)
 dim(airbnb_complete)
 ```
 

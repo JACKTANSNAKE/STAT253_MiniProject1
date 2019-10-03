@@ -1,25 +1,59 @@
 ---
-<<<<<<< HEAD
-title: "MiniProject1"
-author: "Tan Zhenggang, Debbie Sun"
-=======
-title: "Untitled"
-author: "Tan Zhenggang"
->>>>>>> 8a98ee9df78834e232d4b46491dd157ed1271f80
-date: "10/3/2019"
-output: html_document
+title: "Mini-Project 1"
+author: Jack Tan
+output: 
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
-<<<<<<< HEAD
 
-```{r}
-library(ggplot2)
-library(caret)
 
-=======
-sdfjgksdlfkj
-```{r}
-library(ggplot2)
->>>>>>> 8a98ee9df78834e232d4b46491dd157ed1271f80
-```
+
+\
+\
+
+
+
+## Part 1: Ready the data
+
+
+\
+\
+\
+\
+\
+\
+
+
+
+## Part 2: Analyze
+
+
+\
+\
+\
+\
+\
+\
+
+
+
+## Part 3: Summarize
+
+
+
+
+\
+\
+\
+\
+\
+\
+
+
+
+## Part 4: Contributions
+
+
 

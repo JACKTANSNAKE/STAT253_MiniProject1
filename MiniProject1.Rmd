@@ -6,15 +6,15 @@ output:
     toc: true
     toc_float: true
 ---
-
-
-
+```{r message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(caret)
+library(RANN)
+```
 
 \
 \
-
-
-
 ## Part 1: Ready the data
 ```{r}
 airbnb <- read.csv("https://www.macalester.edu/~ajohns24/data/NYC_airbnb_kaggle.csv")
@@ -26,11 +26,15 @@ dim(airbnb_complete)
 deal witht the data
 ```{r}
 airbnb_complete <- airbnb_complete %>% 
-  filter(price < 1000)
+  filter(price < 1000) %>%
+  select(-id,-longitude,-latitude,-amenities,-square_feet,-calendar_updated)
 dim(airbnb_complete)
 ```
 
-
+```{r}
+airbnb_5000 <- sample_n(airbnb_complete,5000)
+dim(airbnb_5000)
+```
 \
 \
 \
@@ -41,6 +45,12 @@ dim(airbnb_complete)
 
 
 ## Part 2: Analyze
+```{r}
+impute_info <- airbnb_5000 %>%
+  preProcess(method = "knnImpute")
+
+airbnb_5000 <- predict(impute_info, newdata = airbnb_5000)
+```
 
 
 \

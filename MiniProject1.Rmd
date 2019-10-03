@@ -45,13 +45,31 @@ dim(airbnb_5000)
 
 
 ## Part 2: Analyze
+impute with KNN
 ```{r}
 impute_info <- airbnb_5000 %>%
   preProcess(method = "knnImpute")
-
 airbnb_5000 <- predict(impute_info, newdata = airbnb_5000)
 ```
 
+model with LASSO
+```{r}
+lambda_grid <- 10^seq(-3, 1, length = 100)
+
+# Set the seed 
+    set.seed(253)
+    
+    lasso_model <- train(
+      price ~ .,
+      data = airbnb_5000,
+      method = "glmnet",
+      trControl = trainControl(method = "cv", number = 10, selectionFunction = "oneSE"),
+      tuneGrid = data.frame(alpha = 1, lambda = lambda_grid),
+      metric = "MAE",
+      na.action = na.omit
+    )
+    
+```
 
 \
 \

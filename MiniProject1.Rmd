@@ -106,10 +106,12 @@ ls_model <- train(
 )
 
 summary(ls_model)
+ls_model$resample%>%
+  summarize(mean(MAE))
 ```
 
 ```{r}
-airbnb_5000 <- airbnb_5000 %>% select(-room_type,-is_business_travel_ready,-instant_bookable)
+airbnb_5000 <- airbnb_5000 %>% select(-room_type,-instant_bookable)
 ```
 
 ```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
@@ -141,7 +143,32 @@ airbnb_5000 <- airbnb_5000 %>% select(-room_type,-is_business_travel_ready,-inst
     # Make plots
     plot(gam_model$finalModel)
 ```
-\
+
+
+
+```{r}
+set.seed(253)
+
+# Run the KNN
+knn_model <- train(
+  price ~ .,
+  data = airbnb_5000,
+  preProcess = c("center","scale"),
+  method = "knn",
+  tuneGrid = data.frame(k = c(1:19, seq(20, 100, by = 5), seq(150, 450, by = 50))),
+  trControl = trainControl(method = "cv", number = 10, selectionFunction = "best"),
+  metric = "MAE",
+  na.action = na.omit
+)
+```
+
+```{r}
+
+knn_model$bestTune
+knn_model$results %>% 
+  filter(k == knn_model$bestTune$k)
+```
+
 \
 \
 \

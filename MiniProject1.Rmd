@@ -11,6 +11,7 @@ library(ggplot2)
 library(dplyr)
 library(caret)
 library(RANN)
+library(stringr)
 ```
 
 \
@@ -26,11 +27,17 @@ dim(airbnb_complete)
 
 
 
-deal witht the data
-```{r}
+deal with the data
+```{r message = FALSE, warning= FALSE}
 airbnb_complete <- airbnb_complete %>% 
-  filter(price < 1000) #%>%
-  #select(-id,-longitude,-latitude,-amenities,-square_feet,-calendar_updated)
+  filter(price < 1000) %>%
+  filter(host_response_rate != "") %>%
+  mutate(amenity_count = str_count(amenities, ',') + 1) %>%
+  #filter(host_is_superhost != "") %>%
+  #filter(host_has_profile_pic != "") %>%
+  #filter(host_response_time != "") %>%
+  #filter(require_guest_profile_picture != )
+  select(-id,-longitude,-latitude,-amenities,-square_feet,-calendar_updated)
 dim(airbnb_complete)
 ```
 
@@ -40,11 +47,6 @@ dim(airbnb_complete)
 set.seed(253)
 airbnb_5000 <- sample_n(airbnb_complete,5000)
 dim(airbnb_5000)
-```
-
-```{r}
-ggplot(airbnb_complete,aes(x = host_is_superhost, y = price))+
-  geom_boxplot()
 ```
 
 \
@@ -60,6 +62,7 @@ ggplot(airbnb_complete,aes(x = host_is_superhost, y = price))+
 impute with KNN
 ```{r}
 impute_info <- airbnb_5000 %>%
+  select(-price) %>%
   preProcess(method = "knnImpute")
 airbnb_5000 <- predict(impute_info, newdata = airbnb_5000)
 ```
@@ -80,9 +83,64 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
       metric = "MAE",
       na.action = na.omit
     )
-    
 ```
 
+```{r message = FALSE}
+model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
+model_coef
+```
+
+
+```{r message = FALSE}
+airbnb_5000 <- airbnb_5000 %>% 
+  select(-host_response_time,-host_response_rate,-host_is_superhost,-host_has_profile_pic,-is_location_exact,-property_type,-beds,-bed_type,-maximum_nights,-cancellation_policy,-require_guest_profile_picture,-neighbourhood)
+```
+
+```{r}
+ls_model <- train(
+    price ~ .,
+    data = airbnb_5000,
+    method = "lm",
+    trControl = trainControl(method = "cv", number = 10),
+    na.action = na.omit
+)
+
+summary(ls_model)
+```
+
+```{r}
+airbnb_5000 <- airbnb_5000 %>% select(-room_type,-is_business_travel_ready,-instant_bookable)
+```
+
+```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
+ # Set the seed
+    set.seed(253)
+
+ # Run the GAM
+    gam_model <- train(
+      price ~.,
+      data = airbnb_5000,
+      method = "gamLoess",
+      tuneGrid = data.frame(span = seq(0.1,1,length = 10), degree = 1),
+      trControl = trainControl(method = "cv", number = 10, selectionFunction = "best"),
+      metric = "MAE",
+      na.action = na.omit
+    )
+```
+
+```{r fig.width = 8, fig.height =12}
+    # Calculate the CV MAE of the best model
+    gam_model$results %>% 
+      filter(span == gam_model$bestTune$span)
+    gam_model$resample %>% 
+      summarize(mean(MAE))
+    
+     # Put the 11 plots in a 4x3 grid
+    par(mfrow = c(4,3))
+    
+    # Make plots
+    plot(gam_model$finalModel)
+```
 \
 \
 \

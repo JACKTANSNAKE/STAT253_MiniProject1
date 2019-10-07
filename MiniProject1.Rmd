@@ -83,7 +83,6 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
 ## Part 3: Summarize
 
 
-lkjfakdsjflksgkahjsldkfjdlghaskldjfhlasdhgkjsgashdglkajdfnasdjfasjgahslgjas;kjgnasjdlhfsabfjkasdhblg
 
 \
 \

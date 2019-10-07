@@ -23,18 +23,30 @@ airbnb_complete <- left_join(nbhd, airbnb, by = c("neighbourhood" = "neighbourho
 dim(airbnb_complete)
 ```
 
+
+
+
 deal witht the data
 ```{r}
 airbnb_complete <- airbnb_complete %>% 
-  filter(price < 1000) %>%
-  select(-id,-longitude,-latitude,-amenities,-square_feet,-calendar_updated)
+  filter(price < 1000) #%>%
+  #select(-id,-longitude,-latitude,-amenities,-square_feet,-calendar_updated)
 dim(airbnb_complete)
 ```
 
+
+
 ```{r}
+set.seed(253)
 airbnb_5000 <- sample_n(airbnb_complete,5000)
 dim(airbnb_5000)
 ```
+
+```{r}
+ggplot(airbnb_complete,aes(x = host_is_superhost, y = price))+
+  geom_boxplot()
+```
+
 \
 \
 \

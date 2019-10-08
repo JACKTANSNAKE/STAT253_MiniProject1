@@ -36,7 +36,7 @@ airbnb_complete <- airbnb_complete %>%
   #filter(host_is_superhost != "") %>%
   #filter(host_has_profile_pic != "") %>%
   #filter(host_response_time != "") %>%
-  #filter(require_guest_profile_picture != )
+  #filter(require_guest_profile_picture != "")
   select(-id,-longitude,-latitude,-amenities,-square_feet,-calendar_updated)
 dim(airbnb_complete)
 ```
@@ -83,6 +83,9 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
       metric = "MAE",
       na.action = na.omit
     )
+    
+lasso_model$resample %>% 
+  summarize(mean(Rsquared))
 ```
 
 ```{r message = FALSE}

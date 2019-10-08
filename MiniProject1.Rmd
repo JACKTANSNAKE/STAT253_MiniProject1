@@ -6,7 +6,7 @@ output:
     toc: true
     toc_float: true
 ---
-```{r message = FALSE}
+```{r message = FALSE, cache = TRUE}
 library(ggplot2)
 library(dplyr)
 library(caret)
@@ -44,7 +44,6 @@ dim(airbnb_complete)
 The "host_response_rate" variable initially has 3 answers, "T", "F", and no information. Since we can't interpret the option of no information, we choose to filter out all data points which has no information of this vairable. We also find out that "host_is_superhost", "host_has_profile_pic", "host_response_time", and "require_guest_profile_picture" all have the same issues, and we tried to filter out all data which have no information of these variables. Surprisingly, the dimension of the dataset is the same with the one that we only filter "host_response_rate"; therefore, we can assume that the data which have no information in "host_response_rate" also does not have information in other variables. For simplicity, we just filter "host_response_rate" so that we can eliminate all missing information in these predictors.
 
 We also deselect id and calendar_updated because we think they have no influence on the price. Also, we drop lontitude and latitude because the data of each is very similar to itself since it's in the same city. We also deselect amenities since we don't think how each kind of amenities would affect the price significantly, but the number of amenities in each of the airbnb might do; therefore, we add the number of amenities, amenity_count, in the dataset and drop amenities.
-
 
 ```{r}
 set.seed(253)
@@ -93,15 +92,17 @@ lasso_model$resample %>%
 
 ```{r message = FALSE}
 model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
-model_coef
+#model_coef 
+#It's a super long list of coeffs and we do not want them listed up in the report.
 ```
 
-
+### Deselecting the variables considered unsignificant by Lasso
 ```{r message = FALSE}
 airbnb_5000_complete <- airbnb_5000 %>% 
   select(-host_response_time,-host_response_rate,-host_is_superhost,-host_has_profile_pic,-is_location_exact,-property_type,-beds,-bed_type,-maximum_nights,-cancellation_policy,-require_guest_profile_picture,-neighbourhood)
 ```
 
+### Least Square model to compare
 ```{r}
 ls_model <- train(
     price ~ .,
@@ -116,10 +117,13 @@ ls_model$resample%>%
   summarize(mean(MAE))
 ```
 
+### Removing the only catergorical variable that has problem with GAM
 ```{r}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type)
 ```
+Originally, the GAM algorithm does not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. So we started out removing multiple less significant variables out (according to the least square model). After trials and errors, we found that the only variable that had problem with GAM was room_type, so we just removed it.(Explanation?).
 
+### Building the GAM model
 ```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
  # Set the seed
     set.seed(253)
@@ -136,6 +140,7 @@ airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type)
     )
 ```
 
+### Showing the GAM results
 ```{r fig.width = 8, fig.height =12}
     # Calculate the CV MAE of the best model
     gam_model$results %>% 
@@ -150,8 +155,7 @@ airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type)
     plot(gam_model$finalModel)
 ```
 
-
-
+### Contrast with KNN
 ```{r}
 set.seed(253)
 
@@ -168,6 +172,7 @@ knn_model <- train(
 )
 ```
 
+### Result of KNN
 ```{r}
 
 knn_model$bestTune

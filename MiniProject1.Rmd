@@ -95,14 +95,14 @@ model_coef
 
 
 ```{r message = FALSE}
-airbnb_5000 <- airbnb_5000 %>% 
+airbnb_5000_complete <- airbnb_5000 %>% 
   select(-host_response_time,-host_response_rate,-host_is_superhost,-host_has_profile_pic,-is_location_exact,-property_type,-beds,-bed_type,-maximum_nights,-cancellation_policy,-require_guest_profile_picture,-neighbourhood)
 ```
 
 ```{r}
 ls_model <- train(
     price ~ .,
-    data = airbnb_5000,
+    data = airbnb_5000_complete,
     method = "lm",
     trControl = trainControl(method = "cv", number = 10),
     na.action = na.omit
@@ -114,7 +114,7 @@ ls_model$resample%>%
 ```
 
 ```{r}
-airbnb_5000 <- airbnb_5000 %>% select(-room_type,-instant_bookable)
+airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type)
 ```
 
 ```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
@@ -124,9 +124,9 @@ airbnb_5000 <- airbnb_5000 %>% select(-room_type,-instant_bookable)
  # Run the GAM
     gam_model <- train(
       price ~.,
-      data = airbnb_5000,
+      data = airbnb_5000_complete,
       method = "gamLoess",
-      tuneGrid = data.frame(span = seq(0.1,1,length = 10), degree = 1),
+      tuneGrid = data.frame(span = seq(0.1,1,length = 100), degree = 1),
       trControl = trainControl(method = "cv", number = 10, selectionFunction = "best"),
       metric = "MAE",
       na.action = na.omit
@@ -155,7 +155,7 @@ set.seed(253)
 # Run the KNN
 knn_model <- train(
   price ~ .,
-  data = airbnb_5000,
+  data = airbnb_5000_complete,
   preProcess = c("center","scale"),
   method = "knn",
   tuneGrid = data.frame(k = c(1:19, seq(20, 100, by = 5), seq(150, 450, by = 50))),

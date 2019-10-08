@@ -27,7 +27,7 @@ dim(airbnb_complete)
 
 
 
-deal with the data
+### Deal with the data
 ```{r message = FALSE, warning= FALSE}
 airbnb_complete <- airbnb_complete %>% 
   filter(price < 1000) %>%
@@ -41,6 +41,9 @@ airbnb_complete <- airbnb_complete %>%
 dim(airbnb_complete)
 ```
 
+The "host_response_rate" variable initially has 3 answers, "T", "F", and no information. Since we can't interpret the option of no information, we choose to filter out all data points which has no information of this vairable. We also find out that "host_is_superhost", "host_has_profile_pic", "host_response_time", and "require_guest_profile_picture" all have the same issues, and we tried to filter out all data which have no information of these variables. Surprisingly, the dimension of the dataset is the same with the one that we only filter "host_response_rate"; therefore, we can assume that the data which have no information in "host_response_rate" also does not have information in other variables. For simplicity, we just filter "host_response_rate" so that we can eliminate all missing information in these predictors.
+
+We also deselect id and calendar_updated because we think they have no influence on the price. Also, we drop lontitude and latitude because the data of each is very similar to itself since it's in the same city. We also deselect amenities since we don't think how each kind of amenities would affect the price significantly, but the number of amenities in each of the airbnb might do; therefore, we add the number of amenities, amenity_count, in the dataset and drop amenities.
 
 
 ```{r}
@@ -78,7 +81,7 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
       price ~ .,
       data = airbnb_5000,
       method = "glmnet",
-      trControl = trainControl(method = "cv", number = 10, selectionFunction = "oneSE"),
+      trControl = trainControl(method = "cv", number = 10, selectionFunction = "best"),
       tuneGrid = data.frame(alpha = 1, lambda = lambda_grid),
       metric = "MAE",
       na.action = na.omit
@@ -126,7 +129,7 @@ airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type)
       price ~.,
       data = airbnb_5000_complete,
       method = "gamLoess",
-      tuneGrid = data.frame(span = seq(0.1,1,length = 100), degree = 1),
+      tuneGrid = data.frame(span = seq(0.1,1,length = 30), degree = 1),
       trControl = trainControl(method = "cv", number = 10, selectionFunction = "best"),
       metric = "MAE",
       na.action = na.omit

@@ -80,7 +80,7 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
       price ~ .,
       data = airbnb_5000,
       method = "glmnet",
-      trControl = trainControl(method = "cv", number = 10, selectionFunction = "best"),
+      trControl = trainControl(method = "cv", number = 10, selectionFunction = "oneSE"),
       tuneGrid = data.frame(alpha = 1, lambda = lambda_grid),
       metric = "MAE",
       na.action = na.omit

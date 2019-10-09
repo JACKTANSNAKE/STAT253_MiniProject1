@@ -46,7 +46,7 @@ dim(airbnb_complete)
 max(airbnb_complete$amenity_count)
 ```
 
-The "host_response_rate" variable initially has 4 levels, "T", "F", "NA", and "". We found similar situations in variables: "host_is_superhost", "host_has_profile_pic", "host_response_time", and "require_guest_profile_picture". We tried to filter out all data which have no information of these variables, since it's hard for us to interpret "" information as we do not know what it stands for and catergorical variables cannot be imputed by the KNN methods. Surprisingly, the dimension of the dataset is the same with all five variables filtered of "" compared to if we only filter "host_response_rate" of ""; therefore, we assumed that the "" data in all five variables were the caused by technical issues when collecting the data. Thus, we think it is reasonable and easier for later processing the data that we filter out the "" data points. For simplicity, we just filtered "host_response_rate" so that we can eliminate all missing information in these predictors. 
+The `host_response_rate` variable initially has 4 levels, "T", "F", "NA", and "". We found similar situations in variables: `host_is_superhost`, `host_has_profile_pic`, `host_response_time`, and `require_guest_profile_picture`. We tried to filter out all data which have no information of these variables, since it's hard for us to interpret "" information as we do not know what it stands for and catergorical variables cannot be imputed by the KNN methods. Surprisingly, the dimension of the dataset is the same with all five variables filtered of "" compared to if we only filter "host_response_rate" of ""; therefore, we assumed that the "" data in all five variables were the caused by technical issues when collecting the data. Thus, we think it is reasonable and easier for later processing the data that we filter out the "" data points. For simplicity, we just filtered `host_response_rate` so that we can eliminate all missing information in these predictors. 
 
 ```{r}
 ggplot(airbnb_complete, aes(x = host_is_superhost, y = price)) + 
@@ -55,7 +55,7 @@ ggplot(airbnb_complete, aes(x = host_is_superhost, y = price)) +
 
 After filtering the blank data ""
 
-We also deselected id and calendar_updated because we think they have no influence on the price. Also, we dropped longitude and latitude because the data of each is very similar to itself since it's in the same city and the neighboorhood_group variable may better catch the trend then these two variables. Same reason with deselecting neighboorhood(although running with neighbourhood in LASSO resulted in a model with $R^2$ of 0.68). We also deselected amenities since there are maximum 87 catergories of amenities so we would technically get $\sum_{k=1}^{87} {87 \choose k} - 1$  different reference levels for this single variable and make the resulting model overly complicated and not interpretable. However, we believe that might exist a relationship between the number of amenities an airbnb has and its price, since intuitively pricey airbnbs should have more services. Therefore, we counted the number of amenities, as amenity_count, in the dataset and dropped amenities.
+We also deselected `id` and `calendar_updated` because we think they have no influence on the price. Also, we dropped `longitude` and `latitude` because the data of each is very similar to itself since it's in the same city and the `neighboorhood_group` variable may better catch the trend then these two variables. Same reason with deselecting `neighboorhood`(although running with `neighbourhood` in LASSO resulted in a model with $R^2$ of 0.68). We also deselected `amenities` since there are maximum 87 catergories of amenities so we would technically get $\sum_{k=1}^{87} {87 \choose k} - 1$  different reference levels for this single variable and make the resulting model overly complicated and not interpretable. However, we believe that might exist a relationship between the number of amenities an airbnb has and its price, since intuitively pricey airbnbs should have more services. Therefore, we counted the number of `amenities`, as `amenity_count`, in the dataset and dropped amenities.
 
 ### Randomly choose 5000 data points
 ```{r,cache=TRUE}
@@ -201,10 +201,15 @@ The $R^2$ of least squares model is 0.598 which is similar to the lasso model. T
 
 
 ### Removing the only catergorical variable that has problem with GAM
-```{r,cache=TRUE}
+```{r,cache=TRUE,eval = fALSE}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
 ```
+<<<<<<< HEAD
 Originally, the GAM algorithm did not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. We removed the less significant variables (according to the least squares model). After trial and error, we found that the only variable that GAM had a problem with was `room_type`, so we just removed it.
+=======
+
+Originally, the GAM algorithm does not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. So we started out removing multiple less significant variables out (according to the least square model). After trials and errors, we found that the only variable that had problem with GAM was room_type, so we just removed it.(Explanation?).
+>>>>>>> d0599951403b70407611a524da835900cba4f3c4
 
 ### Building the GAM model
 ```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12,eval = FALSE}
@@ -266,6 +271,7 @@ knn_model$results %>%
   filter(k == knn_model$bestTune$k)
 ```
 
+Same thing with the KNN model, it lacks interpretability and its $R^2$ is just slightly better LASSO. So we also decided to delete it from our analysis.
 \
 \
 \

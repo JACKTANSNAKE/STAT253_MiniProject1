@@ -203,7 +203,7 @@ airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_respon
 Originally, the GAM algorithm does not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. So we started out removing multiple less significant variables out (according to the least square model). After trials and errors, we found that the only variable that had problem with GAM was room_type, so we just removed it.(Explanation?).
 
 ### Building the GAM model
-```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
+```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12,eval = FALSE}
  # Set the seed
     set.seed(253)
 
@@ -220,7 +220,7 @@ Originally, the GAM algorithm does not like our airbnb_complete dataset. We thou
 ```
 
 ### Showing the GAM results
-```{r fig.width = 8, fig.height =12}
+```{r fig.width = 8, fig.height =12,eval = FALSE}
     # Calculate the CV MAE of the best model
     gam_model$results %>% 
       filter(span == gam_model$bestTune$span)
@@ -274,7 +274,7 @@ knn_model$results %>%
 
 
 price ~ amenity_count
-The coefficient of `amenity` in the LASSO model is 0.0184181137. Thus, as `amenity_count` increases by 1, `price` multiplies by $e^(0.0184181137). This is intuitive because as listings provide more amenities for guests hosts can increase the price. 
+The coefficient of `amenity_count` in the LASSO model is 0.0051755. Thus, as `amenity_count` increases by 1, `price` multiplies by $e^(0.0051755) = 1.005189$. This is intuitive because as listings provide more amenities for guests hosts can increase the price. 
 
 ```{r}
 mean(airbnb_5000_complete$amenity_count)

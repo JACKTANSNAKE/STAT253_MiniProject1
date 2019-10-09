@@ -83,6 +83,37 @@ airbnb_5000 <- predict(impute_info, newdata = airbnb_5000)
 ```
 
 ### Modeling with LASSO
+```{r,cache=FALSE,warning = FALSE}
+lambda_grid <- 10^seq(-3, 1, length = 100)
+
+# Set the seed 
+    set.seed(253)
+    
+    lasso_model_origin <- train(
+      price ~ .,
+      data = airbnb_5000,
+      method = "glmnet",
+      trControl = trainControl(method = "cv", number = 10, selectionFunction = "oneSE"),
+      tuneGrid = data.frame(alpha = 1, lambda = lambda_grid),
+      metric = "MAE",
+      na.action = na.omit
+    )
+    
+lasso_model_origin$results %>%
+  filter(lambda == lasso_model_origin$bestTune$lambda)
+
+# Combine residuals & predictions into data frame
+result_df <- data.frame(resid = resid(lasso_model), fitted = fitted(lasso_model))
+
+# Residual plot
+ggplot(result_df, aes(x = fitted, y = resid)) + 
+    geom_point() + 
+    geom_hline(yintercept = 0)
+```
+
+
+
+### Modeling with LASSO with log(price)
 ```{r, cache=TRUE}
 airbnb_5000$price <- log(airbnb_5000$price + 1)
 ```
@@ -109,7 +140,7 @@ lasso_model$results %>%
 
 ```{r message = FALSE,cache=TRUE}
 model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
-model_coef 
+#model_coef 
 #It's a super long list of coeffs and we do not want them listed up in the report.
 ```
 

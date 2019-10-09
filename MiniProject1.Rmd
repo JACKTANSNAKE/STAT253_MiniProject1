@@ -17,7 +17,7 @@ library(stringr)
 \
 \
 ## Part 1: Ready the data
-```{r}
+```{r, warning=FALSE}
 airbnb <- read.csv("https://www.macalester.edu/~ajohns24/data/NYC_airbnb_kaggle.csv")
 nbhd <- read.csv("https://www.macalester.edu/~ajohns24/data/NYC_nbhd_kaggle.csv")
 airbnb_complete <- left_join(nbhd, airbnb, by = c("neighbourhood" = "neighbourhood_cleansed"))

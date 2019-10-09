@@ -197,9 +197,10 @@ The $R^2$ of least squared model is 0.598 which is similar to the lasso model. T
 
 
 ### Removing the only catergorical variable that has problem with GAM
-```{r,cache=TRUE}
+```{r,cache=TRUE,eval = fALSE}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
 ```
+
 Originally, the GAM algorithm does not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. So we started out removing multiple less significant variables out (according to the least square model). After trials and errors, we found that the only variable that had problem with GAM was room_type, so we just removed it.(Explanation?).
 
 ### Building the GAM model
@@ -262,6 +263,7 @@ knn_model$results %>%
   filter(k == knn_model$bestTune$k)
 ```
 
+Same thing with the KNN model, it lacks interpretability and its $R^2$ is just slightly better LASSO. So we also decided to delete it from our analysis.
 \
 \
 \

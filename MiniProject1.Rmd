@@ -77,7 +77,7 @@ dim(airbnb_5000)
 ### impute with KNN
 ```{r,cache=TRUE}
 impute_info <- airbnb_5000 %>%
-  select(-price) %>%
+  select(-price,-amenity_count) %>%
   preProcess(method = "knnImpute")
 airbnb_5000 <- predict(impute_info, newdata = airbnb_5000)
 ```
@@ -103,13 +103,15 @@ lasso_model_origin$results %>%
   filter(lambda == lasso_model_origin$bestTune$lambda)
 
 # Combine residuals & predictions into data frame
-result_df <- data.frame(resid = resid(lasso_model), fitted = fitted(lasso_model))
+result_df <- data.frame(resid = resid(lasso_model_origin), fitted = fitted(lasso_model_origin))
 
 # Residual plot
 ggplot(result_df, aes(x = fitted, y = resid)) + 
     geom_point() + 
     geom_hline(yintercept = 0)
 ```
+
+We try with lasso model and choose the optimal one within one standard deviation to the best model in lasso algorithm so that we don't have to complicate our model with a similar $R^2$. The $R^2$ of the lasso model is 0.5943, indicating that our model is moderately strong since almost 60 percent of the variability in price is explained by lasso model. Also, the residual plot is balanced on both sides of the x axis, but the residuals are clustered closer to x-axis in the range of 4.5 to 5. 
 
 
 
@@ -144,6 +146,8 @@ lasso_model$results %>%
 model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
 model_coef 
 #It's a super long list of coeffs and we do not want them listed up in the report.
+
+model_coef
 ```
 
 ```{r message = FALSE, cache = TRUE}
@@ -190,6 +194,10 @@ ggplot(result_df_ls, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
+
+The $R^2$ of least squared model is 0.598 which is similar to the lasso model. The least squares model is made up of only the coefficients that the LASSO deemed to be significant. Therefore, we are simply making the LASSO model more interpretable by turning it into a least squares model. The residuals for the least squared model shows the similar trend for the LASSO model.
+
+
 ### Removing the only catergorical variable that has problem with GAM
 ```{r,cache=TRUE}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
@@ -197,7 +205,7 @@ airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_respon
 Originally, the GAM algorithm does not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. So we started out removing multiple less significant variables out (according to the least square model). After trials and errors, we found that the only variable that had problem with GAM was room_type, so we just removed it.(Explanation?).
 
 ### Building the GAM model
-```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
+```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12,eval = FALSE}
  # Set the seed
     set.seed(253)
 
@@ -214,22 +222,26 @@ Originally, the GAM algorithm does not like our airbnb_complete dataset. We thou
 ```
 
 ### Showing the GAM results
-```{r fig.width = 8, fig.height =12}
+```{r fig.width = 8, fig.height =12,eval = FALSE}
     # Calculate the CV MAE of the best model
     gam_model$results %>% 
       filter(span == gam_model$bestTune$span)
     gam_model$resample %>% 
       summarize(mean(MAE))
     
-     # Put the 11 plots in a 4x3 grid
-    par(mfrow = c(4,3))
+    par(mfrow = c(5,4))
     
     # Make plots
     plot(gam_model$finalModel)
 ```
 
+
+The $R^2$ in GAM model that we tried is 0.496 and its MAE is relatively bigger; therefore, we decide to not to use in our analysis.
+
+
+
 ### Contrast with KNN
-```{r}
+```{r, eval = FALSE}
 set.seed(253)
 
 # Run the KNN
@@ -246,8 +258,7 @@ knn_model <- train(
 ```
 
 ### Result of KNN
-```{r}
-
+```{r, eval = FALSE}
 knn_model$bestTune
 knn_model$results %>% 
   filter(k == knn_model$bestTune$k)
@@ -262,6 +273,20 @@ knn_model$results %>%
 
 
 ## Part 3: Summarize
+
+
+price ~ amenity_count
+The coefficient of `amenity_count` in the LASSO model is 0.0051755. Thus, as `amenity_count` increases by 1, `price` multiplies by $e^(0.0051755) = 1.005189$. This is intuitive because as listings provide more amenities for guests hosts can increase the price. 
+
+```{r}
+mean(airbnb_5000_complete$amenity_count)
+max(airbnb_5000_complete$amenity_count)
+min(airbnb_5000_complete$amenity_count)
+median(airbnb_5000_complete$amenity_count)
+airbnb_5000_complete %>% filter(amenity_count == 64)
+
+```
+
 
 
 

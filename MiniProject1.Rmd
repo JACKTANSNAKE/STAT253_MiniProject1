@@ -111,7 +111,7 @@ ggplot(result_df, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
-We try with lasso model and choose the optimal one within one standard deviation to the best model in lasso algorithm so that we don't have to complicate our model with a similar $R^2$. The $R^2$ of the lasso model is 0.5943, indicating that our model is moderately strong since almost 60 percent of the variability in price is explained by lasso model. Also, the residual plot is balanced on both sides of the x axis, but the residuals are clustered closer to x-axis in the range of 4.5 to 5. 
+We tried to predict `price` using a lasso model and chose the optimal model within one standard deviation to the best model in lasso algorithm as to simplify our model while maintaining a similar $R^2$. The $R^2$ of the lasso model is 0.5943, indicating that our model is moderately strong since almost 60 percent of the variability in price is explained by lasso model. Also, the residual plot is balanced on both sides of the residual line. 
 
 
 
@@ -144,10 +144,9 @@ lasso_model$results %>%
 
 ```{r message = FALSE,cache=TRUE}
 model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
-model_coef 
+#model_coef 
 #It's a super long list of coeffs and we do not want them listed up in the report.
 
-model_coef
 ```
 
 ```{r message = FALSE, cache = TRUE}
@@ -164,6 +163,9 @@ ggplot(result_df, aes(x = fitted, y = resid)) +
     geom_point() + 
     geom_hline(yintercept = 0)
 ```
+
+By changing our LASSO model to the log scale, we were able to increase our $R^2$ from 0.507 to 0.595.
+
 
 ### Deselecting the variables considered insignificant by Lasso
 ```{r message = FALSE,cache=TRUE}
@@ -195,14 +197,14 @@ ggplot(result_df_ls, aes(x = fitted, y = resid)) +
 ```
 
 
-The $R^2$ of least squared model is 0.598 which is similar to the lasso model. The least squares model is made up of only the coefficients that the LASSO deemed to be significant. Therefore, we are simply making the LASSO model more interpretable by turning it into a least squares model. The residuals for the least squared model shows the similar trend for the LASSO model.
+The $R^2$ of least squares model is 0.598 which is similar to the lasso model. The least squares model is made up of only the coefficients that the LASSO deemed to be significant. Therefore, we are simply making the LASSO model more interpretable by turning it into a least squares model. The residuals for the least squared model shows the similar trend for the LASSO model.
 
 
 ### Removing the only catergorical variable that has problem with GAM
 ```{r,cache=TRUE}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
 ```
-Originally, the GAM algorithm does not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. So we started out removing multiple less significant variables out (according to the least square model). After trials and errors, we found that the only variable that had problem with GAM was room_type, so we just removed it.(Explanation?).
+Originally, the GAM algorithm did not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. We removed the less significant variables (according to the least squares model). After trial and error, we found that the only variable that GAM had a problem with was `room_type`, so we just removed it.
 
 ### Building the GAM model
 ```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12,eval = FALSE}
@@ -236,7 +238,7 @@ Originally, the GAM algorithm does not like our airbnb_complete dataset. We thou
 ```
 
 
-The $R^2$ in GAM model that we tried is 0.496 and its MAE is relatively bigger; therefore, we decide to not to use in our analysis.
+The $R^2$ in the GAM model that we tried is 0.496 and its MAE is relatively larger than the other models; therefore, we decided to not use it in our analysis.
 
 
 

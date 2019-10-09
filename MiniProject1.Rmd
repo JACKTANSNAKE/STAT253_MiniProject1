@@ -111,6 +111,10 @@ ggplot(result_df, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
+We try with lasso model and choose the optimal one within one standard deviation to the best model in lasso algorithm so that we don't have to complicate our model with a similar $R^2$. The $R^2$ of the lasso model is 0.5943, indicating that our model is moderately strong since almost 60 percent of the variability in price is explained by lasso model. Also, the residual plot is balanced on both sides of the x axis, but the residuals are clustered closer to x-axis in the range of 4.5 to 5. 
+
+
+
 ### Modeling with LASSO with log(price)
 ```{r, cache=TRUE}
 airbnb_5000$price <- log(airbnb_5000$price + 1)
@@ -188,6 +192,10 @@ ggplot(result_df_ls, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
+
+The $R^2$ of least squared model is 0.598 which is similar to the lasso model. The least squares model is made up of only the coefficients that the LASSO deemed to be significant. Therefore, we are simply making the LASSO model more interpretable by turning it into a least squares model. The residuals for the least squared model shows the similar trend for the LASSO model.
+
+
 ### Removing the only catergorical variable that has problem with GAM
 ```{r,cache=TRUE}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
@@ -219,12 +227,16 @@ Originally, the GAM algorithm does not like our airbnb_complete dataset. We thou
     gam_model$resample %>% 
       summarize(mean(MAE))
     
-     # Put the 11 plots in a 4x3 grid
-    par(mfrow = c(4,3))
+    par(mfrow = c(5,4))
     
     # Make plots
     plot(gam_model$finalModel)
 ```
+
+
+The $R^2$ in GAM model that we tried is 0.496 and its MAE is relatively bigger; therefore, we decide to not to use in our analysis.
+
+
 
 ### Contrast with KNN
 ```{r, eval = FALSE}

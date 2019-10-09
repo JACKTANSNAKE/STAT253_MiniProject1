@@ -1,6 +1,6 @@
 ---
 title: "Mini-Project 1"
-author: Jack Tan, Debbie Sun, Alex
+author: Jack Tan, Debbie Sun, Alex Denzler
 output: 
   html_document:
     toc: true
@@ -136,11 +136,13 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
     
 lasso_model$results %>%
   filter(lambda == lasso_model$bestTune$lambda)
+
 ```
+
 
 ```{r message = FALSE,cache=TRUE}
 model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
-#model_coef 
+model_coef 
 #It's a super long list of coeffs and we do not want them listed up in the report.
 ```
 
@@ -159,7 +161,7 @@ ggplot(result_df, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
-### Deselecting the variables considered unsignificant by Lasso
+### Deselecting the variables considered insignificant by Lasso
 ```{r message = FALSE,cache=TRUE}
 airbnb_5000_complete <- airbnb_5000 %>% 
   select(-host_response_rate,-host_is_superhost,-host_has_profile_pic,-is_location_exact,-property_type,-beds,-bed_type,-maximum_nights,-number_of_reviews,-cancellation_policy,-require_guest_profile_picture)
@@ -177,6 +179,7 @@ ls_model <- train(
 )
 
 summary(ls_model)
+ls_model$results$Rsquared
 ls_model$resample%>%
   summarize(mean(MAE))
 result_df_ls <- data.frame(resid = resid(ls_model), fitted = fitted(ls_model))
@@ -259,6 +262,8 @@ knn_model$results %>%
 
 
 ## Part 3: Summarize
+
+
 
 
 

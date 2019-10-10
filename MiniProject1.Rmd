@@ -67,6 +67,9 @@ airbnb_complete <- airbnb_complete %>%
 #After filtering the blank data ""
 ggplot(airbnb_complete, aes(x = host_is_superhost, y = price)) + 
   geom_boxplot()
+
+dim(airbnb_complete)
+#filtered out 231 data points with blank data
 ```
 
 Upon further examination, we identified many blank values ("") in several of our categorical variables. For example, `host_is_superhost` originally had 4 levels, "t", "f", "NA", and "". Other variables that had the same problem were `host_is_superhost`, `host_has_profile_pic`, `host_response_time`, and `require_guest_profile_picture`. Because "" are impossible to interpret (we do not know what it stands for, especially when there is also another level, "NA"") and analyze (catergorical variables cannot be imputed using the KNN method), we tried to filter out all datapoints with blank values for these variables. Surprisingly, the length of the dataset is the same with all five variables filtered of "" compared to if we only filter "host_response_rate" of "", implying that removal of all "" values in host_response_rate successfully filtered out "" for other variables. We assumed that the "" data in all five variables were the caused by technical issues when collecting the data. For simplicity, we only filtered `host_response_rate` so that we can eliminate all missing information in these predictors. 
@@ -204,7 +207,7 @@ dim(airbnb_5000_complete)
 ```
 
 
-```{r, cache = TRUE}
+```{r, cache = TRUE, warning = FALSE}
 ls_model <- train(
     price ~ .,
     data = airbnb_5000_complete,
@@ -230,9 +233,9 @@ The $R^2$ of least squares model is 0.598 which is similar to the LASSO model's.
 
 
 
-### Parametric models
+### Non-parametric models
 
-In addiiton to LASSO and least squares, we tried parametric models of GAM and KNN that might better predict `price`. As both models performed worse than our least square models in terms of strength (measured by $R^2$) and accuracy of predictions (measured by CV MAE), we decided to settle for the least-square model.
+In addiiton to LASSO and least squares, we tried non-parametric models of GAM and KNN that might better predict `price`. As both models performed worse than our least square model in terms of strength (measured by $R^2$) and accuracy of predictions (measured by CV MAE), we decided to settle for the least square model.
 
 
 
@@ -283,22 +286,24 @@ There are 15 remaining predictors in our final model. Among these, room_type was
 
 
 ## Part 4: Contributions
+Code: Jack, Debbie
+Analysis: April, Alex
 
 
 
-## Appendix on Parametric Model Trials
+## Appendix on Non-parametric Model Trials
 
 ### GAM/LOESS Model
 
 #### Removing the only catergorical variable that has problem with GAM
-```{r, cache = TRUE, eval = fALSE}
+```{r, cache = TRUE}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
 ```
 
 Originally, the GAM algorithm could not run on our airbnb_complete_5000 dataset. We thought the large number of catergorical variables (and reference levels) prevented it from processing. Thus, we removed the less significant variables according to the least squares model. After trial and error, we found that the only variable that GAM had a problem with was `room_type`, so we removed this variable.
 
 #### Building the GAM model
-```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12, eval = FALSE}
+```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
  # Set the seed
     set.seed(253)
 
@@ -314,8 +319,8 @@ Originally, the GAM algorithm could not run on our airbnb_complete_5000 dataset.
     )
 ```
 
-### GAM results
-```{r fig.width = 8, fig.height = 12,eval = FALSE}
+#### GAM results
+```{r fig.width = 8, fig.height = 12}
     # Calculate the CV MAE of the best model
     gam_model$results %>% 
       filter(span == gam_model$bestTune$span)
@@ -330,10 +335,8 @@ Originally, the GAM algorithm could not run on our airbnb_complete_5000 dataset.
 
 The $R^2$ in the GAM model that we tried is 0.496 and its MAE is relatively larger than the other models. Therefore, we decided to not use it in our analysis.
 
-
-
-### Contrast with KNN
-```{r, eval = FALSE}
+#### Contrast with KNN
+```{r}
 set.seed(253)
 
 # Run the KNN
@@ -349,8 +352,8 @@ knn_model <- train(
 )
 ```
 
-### Result of KNN
-```{r, eval = FALSE}
+#### Result of KNN
+```{r}
 knn_model$bestTune
 knn_model$results %>% 
   filter(k == knn_model$bestTune$k)

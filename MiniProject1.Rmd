@@ -250,7 +250,7 @@ In addiiton to LASSO and least squares, we tried parametric models of GAM and KN
 
 Our final model is least squares, which gave us an Rsquared value of 0.598.
 ```{r}
-summary(least_squares)
+summary(ls_model)
 ```
 
 ### Interpretation of the price ~ amenity_count relationship

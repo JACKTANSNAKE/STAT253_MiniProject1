@@ -284,6 +284,8 @@ Our model will contribute to a better general  understanding of the price in Air
 Code: Jack, Debbie
 \
 Analysis: April, Alex
+\
+Github Link: https://github.com/JACKTANSNAKE/STAT253_MiniProject1.git
 
 
 

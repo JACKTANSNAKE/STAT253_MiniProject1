@@ -33,31 +33,31 @@ dim(airbnb_complete)
 
 ### Data wrangling
 
-#### Clean up the data
+#### Dataset clean-up & initial variable selection
 ```{r message = FALSE, warning = FALSE, cache = TRUE}
 airbnb_complete <- airbnb_complete %>% 
   filter(price < 1000) %>%
-  select(-id, -longitude, -latitude, -neighbourhood,-calendar_updated, -square_feet, -amenities) %>% 
-  mutate(amenity_count = str_count(amenities, ',') + 1)
+  mutate(amenity_count = str_count(amenities, ',') + 1)  %>% 
+  select(-id, -longitude, -latitude, -neighbourhood, -calendar_updated, -square_feet, -amenities)
 
 max(airbnb_complete$amenity_count)
 
 dim(airbnb_complete)
 ```
 
-We deselected idenfitication variables, `id`, `longitude` and `latitude` because these cannot be analyzed. While location can illuminate some of the price differences, we determined that `longitude` and `latitude` values of these listings would be very similar because of their closeness (within NYC) while `neighboorhood_group` may better catch the geographical effect than these two variables. Similarly, we removed `neighboorhood` from our dataset because `neighborhood_group` or borough is expected to reflect its effect (although running LASSO with `neighbourhood` resulted in a model with $R^2$ of 0.68). `calendar_updated`, how recently updated the listing details are, was also dropped - we determined that would not be useful for our predictive model of price. `square_feet` on the area of the listing would be a very useful predictor, but we also removed it because the missing 
+We deselected idenfitication variables, `id`, `longitude` and `latitude` because these cannot be analyzed. While location can illuminate some of the price differences, we determined that `longitude` and `latitude` values of these listings would be very similar because of their closeness (within NYC) while `neighboorhood_group` may better catch the geographical effect than these two variables. Similarly, we removed `neighboorhood` from our dataset because `neighborhood_group` or borough is expected to reflect its effect (although running LASSO with `neighbourhood` resulted in a model with $R^2$ of 0.68). `calendar_updated`, how recently updated the listing details are, was also dropped - we determined that would not be useful for our predictive model of price. `square_feet` on the area of the listing would be a very useful predictor, but we also removed it because the majority of datapoints are missing for this variable.
 
-We also deselected `amenities` since there are maximum 87 catergories of amenities so we would technically get $\sum_{k=1}^{87} {87 \choose k} - 1$  different reference levels for this single variable and make the resulting model overly complicated and not interpretable. However, we believe that might exist a relationship between the number of amenities an airbnb has and its price, since intuitively pricey airbnbs should have more services. Therefore, we counted the number of `amenities`, as `amenity_count`, in the dataset and dropped amenities.
+Finally, we manipulated the variable `amenities`. The original form of `amenities` had all amenities listed as strings and each unique combination a single reference level. With a maximum of 87 amenities, we could have up to $\sum_{k=1}^{87} {87 \choose k} - 1$  different reference levels for this single variable, which makes the resulting model overly complicated and not interpretable. Still, we believe that a meaningful relationship exists between the number of amenities an airbnb listing has and its price (intuitively, airbnbs with many services should be pricey). Therefore, we mutated a new variable, `amenity_count`, from `amenities` and removed the original variable.
 
 
 
-#### One example of correlation (catergorical)
+#### Categorical variables with blank values
 ```{r}
 ggplot(airbnb_complete, aes(x = host_is_superhost, y = price)) + 
   geom_boxplot()
 
 airbnb_complete <- airbnb_complete %>% 
-  filter(host_response_rate != "") %>%
+  filter(host_response_rate != "")
   #filter(host_is_superhost != "") %>%
   #filter(host_has_profile_pic != "") %>%
   #filter(host_response_time != "") %>%
@@ -69,11 +69,14 @@ ggplot(airbnb_complete, aes(x = host_is_superhost, y = price)) +
   geom_boxplot()
 ```
 
-Upon further examination, we identified many blank values ("") in several of our categorical variables. For example, `host_response_rate` originally had 4 levels, "T", "F", "NA", and "". Other variables that had the same problem were `host_is_superhost`, `host_has_profile_pic`, `host_response_time`, and `require_guest_profile_picture`. Because "" are impossible to interpret (we do not know what it stands for, especially in the presence of "NA"") and analyze (catergorical variables cannot be imputed using the KNN method), we tried to filter out all datapoints with blank values for these variables. Surprisingly, the length of the dataset is the same with all five variables filtered of "" compared to if we only filter "host_response_rate" of "", implying that removal of all "" values in host_response_rate successfully filtered out "" for other variables. We assumed that the "" data in all five variables were the caused by technical issues when collecting the data. For simplicity, we only filtered `host_response_rate` so that we can eliminate all missing information in these predictors. 
+Upon further examination, we identified many blank values ("") in several of our categorical variables. For example, `host_is_superhost` originally had 4 levels, "t", "f", "NA", and "". Other variables that had the same problem were `host_is_superhost`, `host_has_profile_pic`, `host_response_time`, and `require_guest_profile_picture`. Because "" are impossible to interpret (we do not know what it stands for, especially when there is also another level, "NA"") and analyze (catergorical variables cannot be imputed using the KNN method), we tried to filter out all datapoints with blank values for these variables. Surprisingly, the length of the dataset is the same with all five variables filtered of "" compared to if we only filter "host_response_rate" of "", implying that removal of all "" values in host_response_rate successfully filtered out "" for other variables. We assumed that the "" data in all five variables were the caused by technical issues when collecting the data. For simplicity, we only filtered `host_response_rate` so that we can eliminate all missing information in these predictors. 
 
 
 
-#### Randomly choose 5000 datapoints to get a smaller dataset for analysis
+#### Extracting a smaller dataset
+
+As we used computationally expensive methods to build our predictive model, we randomly chose 5000 datapoints to get a smaller dataset for analysis.
+
 ```{r, cache = TRUE}
 set.seed(253)
 airbnb_5000 <- sample_n(airbnb_complete, 5000)
@@ -92,8 +95,11 @@ dim(airbnb_5000)
 
 
 ## Part 2: Analyze
-### impute with KNN
-```{r,cache=TRUE}
+### Impute missing values with KNN
+
+preProcess function with KNN allowed us to impute missing values for all variables except price and amenity count (which are complete).
+
+```{r, cache = TRUE}
 impute_info <- airbnb_5000 %>%
   select(-price,-amenity_count) %>%
   preProcess(method = "knnImpute")
@@ -101,12 +107,13 @@ airbnb_5000 <- predict(impute_info, newdata = airbnb_5000)
 ```
 
 ### Modeling with LASSO
-```{r,cache=FALSE,warning = FALSE}
+```{r, cache = FALSE, warning = FALSE}
 lambda_grid <- 10^seq(-3, 1, length = 100)
 
-# Set the seed 
+#Set the seed
     set.seed(253)
-    
+
+#Build the LASSO model
     lasso_model_origin <- train(
       price ~ .,
       data = airbnb_5000,
@@ -116,29 +123,28 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
       metric = "MAE",
       na.action = na.omit
     )
-    
+
+#Best model from LASSO    
 lasso_model_origin$results %>%
   filter(lambda == lasso_model_origin$bestTune$lambda)
 
-# Combine residuals & predictions into data frame
-result_df <- data.frame(resid = resid(lasso_model_origin), fitted = fitted(lasso_model_origin))
-
 # Residual plot
+result_df <- data.frame(resid = resid(lasso_model_origin), fitted = fitted(lasso_model_origin))
 ggplot(result_df, aes(x = fitted, y = resid)) + 
     geom_point() + 
     geom_hline(yintercept = 0)
 ```
 
-We tried to predict `price` using a lasso model and chose the optimal model within one standard deviation to the best model in lasso algorithm as to simplify our model while maintaining a similar $R^2$. The $R^2$ of the lasso model is 0.5943, indicating that our model is moderately strong since almost 60 percent of the variability in price is explained by lasso model. Also, the residual plot is balanced on both sides of the residual line. 
+To build a predictive model for `price`, we started with the LASSO method. We ran LASSO with the train() function in caret, using 10-fold cross-validation, a lambda grid and chose the best model that is also the simplest with an MAE within 1 standard deviation of the smallest MAE (so as to simplify our model while maintaining a comparable accuracy). The final model given by LASSO has a tuning parameter, lambda, of 3.94 and an $R^2$ value of 0.5943. The residual plot shows a fairly random and balanced distribution on both sides of the residual line. These indicate that our model is right and moderately strong - almost 60 percent of the variability in price is explained. 
 
 
 
-### Modeling with LASSO with log(price)
-```{r, cache=TRUE}
+### Modeling with LASSO and log-transformed `price`
+```{r, cache = TRUE}
 airbnb_5000$price <- log(airbnb_5000$price + 1)
 ```
 
-```{r,cache=FALSE,warning = FALSE}
+```{r, cache = FALSE, warning = FALSE}
 lambda_grid <- 10^seq(-3, 1, length = 100)
 
 # Set the seed 
@@ -156,16 +162,13 @@ lambda_grid <- 10^seq(-3, 1, length = 100)
     
 lasso_model$results %>%
   filter(lambda == lasso_model$bestTune$lambda)
-
 ```
 
-Improve Rsquared and residual plot
 
-```{r message = FALSE, cache=TRUE}
-model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
+```{r message = FALSE, cache = TRUE}
 #model_coef 
-#It's a super long list of coeffs and we do not want them listed up in the report.
-
+#This is a long list of coeffs and we do not want them listed up in the report.
+model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
 ```
 
 ```{r message = FALSE, cache = TRUE}
@@ -183,18 +186,25 @@ ggplot(result_df, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
-By changing our LASSO model to the log scale, we were able to increase our $R^2$ from 0.507 to 0.595.
+We attempted the LASSO model on log-transformed `price`. By doing this, we were able to increase our $R^2$ from 0.507 to 0.595 and improve our residual plot.
 
 
-### Deselecting the variables considered insignificant by Lasso
-```{r message = FALSE,cache=TRUE}
+
+### Further refine the model - Least Square method 
+
+#### Variable selection using LASSO results
+
+From the results of our LASSO on log-transformed model, we removed variables whose coefficients were shrunk to 0 and kept only those considered significant by LASSO. We were left with 15 remaining variables for to build our refined model.
+
+```{r message = FALSE, cache = TRUE}
 airbnb_5000_complete <- airbnb_5000 %>% 
   select(-host_response_rate,-host_is_superhost,-host_has_profile_pic,-is_location_exact,-property_type,-beds,-bed_type,-maximum_nights,-number_of_reviews,-cancellation_policy,-require_guest_profile_picture)
+
 dim(airbnb_5000_complete)
 ```
 
-### Least Square model to compare
-```{r, cache=TRUE}
+
+```{r, cache = TRUE}
 ls_model <- train(
     price ~ .,
     data = airbnb_5000_complete,
@@ -216,22 +226,79 @@ ggplot(result_df_ls, aes(x = fitted, y = resid)) +
 ```
 
 
-The $R^2$ of least squares model is 0.598 which is similar to the lasso model. The least squares model is made up of only the coefficients that the LASSO deemed to be significant. Therefore, we are simply making the LASSO model more interpretable by turning it into a least squares model. The residuals for the least squared model shows the similar trend for the LASSO model.
+The $R^2$ of least squares model is 0.598 which is similar to the LASSO model's. The least squares model is comprised of only the coefficients that the LASSO deemed to be significant. Therefore, we are simply making the LASSO model more interpretable by turning it into a least squares model. The residuals for the least squared model shows a similar trend to the LASSO model.
 
 
-### Removing the only catergorical variable that has problem with GAM
-```{r,cache=TRUE,eval = fALSE}
+
+### Parametric models
+
+In addiiton to LASSO and least squares, we tried parametric models of GAM and KNN that might better predict `price`. As both models performed worse than our least square models in terms of strength (measured by $R^2$) and accuracy of predictions (measured by CV MAE), we decided to settle for the least-square model.
+
+
+
+\
+\
+\
+\
+\
+
+
+
+## Part 3: Summarize
+
+### Summary of model-building analysis
+
+Our final model is least squares, which gave us an Rsquared value of 0.598.
+```{r}
+summary(least_squares)
+```
+
+### Interpretation of the price ~ amenity_count relationship
+
+The coefficient of `amenity_count` given the LASSO model is 0.0051755. Thus, as `amenity_count` increases by 1, `price` multiplies by $e^(0.0051755) = 1.005189$. This is intuitive because as listings provide more amenities for guests, hosts increase the price to cover the costs of these services. 
+
+```{r}
+mean(airbnb_5000_complete$amenity_count)
+max(airbnb_5000_complete$amenity_count)
+min(airbnb_5000_complete$amenity_count)
+median(airbnb_5000_complete$amenity_count)
+airbnb_5000_complete %>% filter(amenity_count == 64)
+```
+
+### Take-home Message
+
+Using a combination of parametric models, LASSO on log-transformed for variable selection and least-squares for building a refined model, we were able to quantify the relationships of listing price and a variety of predictors. Although our examination of the dataset using GAM algorithm revealed, predictors exhibited different relationships to the response variable `price`. However, the non-parametric models, GAM and KNN, did not perform as well as the simpler and more interpretable least squares model. As a result, we chose the least square model as our final model.
+
+There are 15 remaining predictors in our final model. Among these, room_type was the most significant: all other factors equal, "Entire home/apartment" listings are significantly more expensive than "Private room", and "Shared room" are the cheapest, not a surprising result of our analysis. Different neighborhoods also housed differently-priced Airbnb listings: for listings of all similar conditions, those in Manhattan have the highest priced places, followed by Brooklyn, Queens, Bronx, and finally Staten Island. This ranking corresponds well with the popularity of the different borough to tourists of NYC. Next, the number of visitors accommodated (`accommodates`) and whether the room allows for additional guests (`guests_allowed`) also correlates positively with listing prices, suggesting that all other factors similar, the more the space allows, the pricier it is. Added points are also given to listing with higher number of bathrooms (`bathroom`) and bedrooms (`bedroom`), those that are instant bookable (`instant_bookablet`) have higher review scores (`review_score_rating`) and amenities (`amenities_count`) (holding all others equal in each case). Our model was able to reflect the small positive influence of availability in the following 30 days (`availability_30`, a proxy for popularity), negative relationship of review frequency (`reviews_per_month`, perhaps the worse ones receive more negative and frequent feedback?) and length requirement (`minimum_nights`, which may inhibit bookings and make listings less desirable) on the prices of listings with all equal other conditions.
+
+
+
+\
+\
+\
+\
+\
+\
+
+
+
+## Part 4: Contributions
+
+
+
+## Appendix on Parametric Model Trials
+
+### GAM/LOESS Model
+
+#### Removing the only catergorical variable that has problem with GAM
+```{r, cache = TRUE, eval = fALSE}
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
 ```
-<<<<<<< HEAD
-Originally, the GAM algorithm did not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. We removed the less significant variables (according to the least squares model). After trial and error, we found that the only variable that GAM had a problem with was `room_type`, so we just removed it.
-=======
 
-Originally, the GAM algorithm does not like our airbnb_complete dataset. We thought there might be too many catergorical variables and it can't handle that much. So we started out removing multiple less significant variables out (according to the least square model). After trials and errors, we found that the only variable that had problem with GAM was room_type, so we just removed it.
->>>>>>> d0599951403b70407611a524da835900cba4f3c4
+Originally, the GAM algorithm could not run on our airbnb_complete_5000 dataset. We thought the large number of catergorical variables (and reference levels) prevented it from processing. Thus, we removed the less significant variables according to the least squares model. After trial and error, we found that the only variable that GAM had a problem with was `room_type`, so we removed this variable.
 
-### Building the GAM model
-```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12,eval = FALSE}
+#### Building the GAM model
+```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12, eval = FALSE}
  # Set the seed
     set.seed(253)
 
@@ -240,15 +307,15 @@ Originally, the GAM algorithm does not like our airbnb_complete dataset. We thou
       price ~.,
       data = airbnb_5000_complete,
       method = "gamLoess",
-      tuneGrid = data.frame(span = seq(0.1,1,length = 30), degree = 1),
+      tuneGrid = data.frame(span = seq(0.1,1, length = 30), degree = 1),
       trControl = trainControl(method = "cv", number = 10, selectionFunction = "best"),
       metric = "MAE",
       na.action = na.omit
     )
 ```
 
-### Showing the GAM results
-```{r fig.width = 8, fig.height =12,eval = FALSE}
+### GAM results
+```{r fig.width = 8, fig.height = 12,eval = FALSE}
     # Calculate the CV MAE of the best model
     gam_model$results %>% 
       filter(span == gam_model$bestTune$span)
@@ -261,8 +328,7 @@ Originally, the GAM algorithm does not like our airbnb_complete dataset. We thou
     plot(gam_model$finalModel)
 ```
 
-
-The $R^2$ in the GAM model that we tried is 0.496 and its MAE is relatively larger than the other models; therefore, we decided to not use it in our analysis.
+The $R^2$ in the GAM model that we tried is 0.496 and its MAE is relatively larger than the other models. Therefore, we decided to not use it in our analysis.
 
 
 
@@ -291,57 +357,3 @@ knn_model$results %>%
 ```
 
 Similar to the GAM model, KNN lacks interpretability and its $R^2$ is just slightly better than GAM. So we also decided to delete it from our analysis.
-
-
-Our final model is least squares, which gave us an Rsquared value of 0.598.
-```{r}
-summary(least_squares)
-```
-
-
-\
-\
-\
-\
-\
-
-
-
-## Part 3: Summarize
-
-
-price ~ amenity_count
-The coefficient of `amenity_count` in the LASSO model is 0.0051755. Thus, as `amenity_count` increases by 1, `price` multiplies by $e^(0.0051755) = 1.005189$. This is intuitive because as listings provide more amenities for guests hosts can increase the price. 
-
-```{r}
-mean(airbnb_5000_complete$amenity_count)
-max(airbnb_5000_complete$amenity_count)
-min(airbnb_5000_complete$amenity_count)
-median(airbnb_5000_complete$amenity_count)
-airbnb_5000_complete %>% filter(amenity_count == 64)
-```
-
-
-Relationship of all predictors to price in the model. When holding amenity_count constant, what other predictors contribute to price? Listings of important predictors. 
-
-
-Using a combination of parametric worked and we were able to quantify the relationships of . 
-- 
-
-Why we think the variables made sense in the end.
-
-
-\
-\
-\
-\
-\
-\
-
-
-
-## Part 4: Contributions
-
-
-
-## Appendix

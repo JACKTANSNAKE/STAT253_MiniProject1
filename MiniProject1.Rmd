@@ -72,7 +72,7 @@ dim(airbnb_complete)
 #filtered out 231 data points with blank data
 ```
 
-Upon further examination, we identified many blank values ("") in several of our categorical variables. For example, `host_is_superhost` originally had 4 levels, "t", "f", "NA", and "". Other variables that had the same problem were `host_is_superhost`, `host_has_profile_pic`, `host_response_time`, and `require_guest_profile_picture`. Because "" are impossible to interpret (we do not know what it stands for, especially when there is also another level, "NA"") and analyze (catergorical variables cannot be imputed using the KNN method), we tried to filter out all datapoints with blank values for these variables. Surprisingly, the length of the dataset is the same with all five variables filtered of "" compared to if we only filter "host_response_rate" of "", implying that removal of all "" values in host_response_rate successfully filtered out "" for other variables. We assumed that the "" data in all five variables were the caused by technical issues when collecting the data. For simplicity, we only filtered `host_response_rate` so that we can eliminate all missing information in these predictors. 
+Upon further examination, we identified many blank values ("") in several of our categorical variables. For example, `host_is_superhost` originally had 3 levels, "t", "f", and "". Other variables that had the same problem were `host_response_rate`, `host_has_profile_pic`, `host_response_time`, and `require_guest_profile_picture`. Because "" are impossible to interpret (we do not know what it stands for, especially when there is also another level, "NA"") and analyze (catergorical variables cannot be imputed using the KNN method), we tried to filter out all datapoints with blank values for these variables. Surprisingly, the length of the dataset is the same with all five variables filtered of "" compared to if we only filter "host_response_rate" of "", implying that removal of all "" values in host_response_rate successfully filtered out "" for other variables. We assumed that the "" data in all five variables were the caused by technical issues when collecting the data. For simplicity, we only filtered `host_response_rate` so that we can eliminate all missing information in these predictors. 
 
 
 
@@ -88,7 +88,6 @@ dim(airbnb_5000)
 
 
 
-\
 \
 \
 \
@@ -138,7 +137,7 @@ ggplot(result_df, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
-To build a predictive model for `price`, we started with the LASSO method. We ran LASSO with the train() function in caret, using 10-fold cross-validation, a lambda grid and chose the best model that is also the simplest with an MAE within 1 standard deviation of the smallest MAE (so as to simplify our model while maintaining a comparable accuracy). The final model given by LASSO has a tuning parameter, lambda, of 3.94 and an $R^2$ value of 0.5943. The residual plot shows a fairly random and balanced distribution on both sides of the residual line. These indicate that our model is right and moderately strong - almost 60 percent of the variability in price is explained. 
+To build a predictive model for `price`, we started with the LASSO method. We ran LASSO with the train() function in caret, using 10-fold cross-validation, a lambda grid and chose the best model that is also the simplest with an MAE within 1 standard deviation of the smallest MAE (so as to simplify our model while maintaining a comparable accuracy). The final model given by LASSO has a tuning parameter, lambda, of 5.21 and an $R^2$ value of 0.5071. The residual plot shows a fairly random and balanced distribution on both sides of the residual line. 
 
 
 
@@ -170,7 +169,7 @@ lasso_model$results %>%
 
 ```{r message = FALSE, cache = TRUE}
 #model_coef 
-#This is a long list of coeffs and we do not want them listed up in the report.
+#This is a long list of coeffs and we do not want them displayed in the report.
 model_coef <- coef(lasso_model$finalModel, lasso_model$bestTune$lambda)
 ```
 
@@ -189,11 +188,11 @@ ggplot(result_df, aes(x = fitted, y = resid)) +
     geom_hline(yintercept = 0)
 ```
 
-We attempted the LASSO model on log-transformed `price`. By doing this, we were able to increase our $R^2$ from 0.507 to 0.595 and improve our residual plot.
+We attempted the LASSO model on log-transformed `price`. By doing this, we were able to increase our $R^2$ from 0.507 to 0.595 and improve our residual plot. These indicate that our model is right and moderately strong - almost 60 percent of the variability in price is explained. 
 
 
 
-### Further refine the model - Least Square method 
+### Further refine the model - Least Square 
 
 #### Variable selection using LASSO results
 
@@ -253,7 +252,7 @@ In addiiton to LASSO and least squares, we tried non-parametric models of GAM an
 
 Our final model is least squares, which gave us an Rsquared value of 0.598.
 ```{r}
-summary(ls_model)
+ls_model$results
 ```
 
 ### Interpretation of the price ~ amenity_count relationship
@@ -274,6 +273,8 @@ Using a combination of parametric models, LASSO on log-transformed for variable 
 
 There are 15 remaining predictors in our final model. Among these, room_type was the most significant: all other factors equal, "Entire home/apartment" listings are significantly more expensive than "Private room", and "Shared room" are the cheapest, not a surprising result of our analysis. Different neighborhoods also housed differently-priced Airbnb listings: for listings of all similar conditions, those in Manhattan have the highest priced places, followed by Brooklyn, Queens, Bronx, and finally Staten Island. This ranking corresponds well with the popularity of the different borough to tourists of NYC. Next, the number of visitors accommodated (`accommodates`) and whether the room allows for additional guests (`guests_allowed`) also correlates positively with listing prices, suggesting that all other factors similar, the more the space allows, the pricier it is. Added points are also given to listing with higher number of bathrooms (`bathroom`) and bedrooms (`bedroom`), those that are instant bookable (`instant_bookablet`) have higher review scores (`review_score_rating`) and amenities (`amenities_count`) (holding all others equal in each case). Our model was able to reflect the small positive influence of availability in the following 30 days (`availability_30`, a proxy for popularity), negative relationship of review frequency (`reviews_per_month`, perhaps the worse ones receive more negative and frequent feedback?) and length requirement (`minimum_nights`, which may inhibit bookings and make listings less desirable) on the prices of listings with all equal other conditions.
 
+Our model will contribute to a better general  understanding of the price in Airbnb listings, allowing hosts to choose an appropriate price for their rental and NYC tourists to predict the  general price trends based on different factors. The dataset we used to build this model does not contain personal information and this correct,  strong and  accurate  model  will be put to ethical uses. 
+
 
 
 \
@@ -288,6 +289,15 @@ There are 15 remaining predictors in our final model. Among these, room_type was
 ## Part 4: Contributions
 Code: Jack, Debbie
 Analysis: April, Alex
+
+
+
+\
+\
+\
+\
+\
+\
 
 
 
@@ -335,7 +345,7 @@ Originally, the GAM algorithm could not run on our airbnb_complete_5000 dataset.
 
 The $R^2$ in the GAM model that we tried is 0.496 and its MAE is relatively larger than the other models. Therefore, we decided to not use it in our analysis.
 
-#### Contrast with KNN
+### KNN Model
 ```{r}
 set.seed(253)
 

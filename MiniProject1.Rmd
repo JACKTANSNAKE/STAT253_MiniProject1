@@ -215,39 +215,33 @@ ls_model <- train(
     na.action = na.omit
 )
 
-summary(ls_model)
+summary(ls_model)#The summary is a little weird looing because the predictors' names are long.
 ls_model$results$Rsquared
 ls_model$resample%>%
   summarize(mean(MAE))
 result_df_ls <- data.frame(resid = resid(ls_model), fitted = fitted(ls_model))
-
- # Residual plot
+# Residual plot
 ggplot(result_df_ls, aes(x = fitted, y = resid)) + 
     geom_point() + 
     geom_hline(yintercept = 0)
 ```
 
-
 The $R^2$ of least squares model is 0.598 which is similar to the LASSO model's. The least squares model is comprised of only the coefficients that the LASSO deemed to be significant. Therefore, we are simply making the LASSO model more interpretable by turning it into a least squares model. The residuals for the least squared model shows a similar trend to the LASSO model.
-
-
 
 ### Non-parametric models
 
 In addiiton to LASSO and least squares, we tried non-parametric models of GAM and KNN that might better predict `price`. As both models performed worse than our least square model in terms of strength (measured by $R^2$) and accuracy of predictions (measured by CV MAE), we decided to settle for the least square model.
 
+\
+\
+\
+\
+\
 
-
-\
-\
-\
-\
-\
 
 
 
 ## Part 3: Summarize
-
 ### Summary of model-building analysis
 
 Our final model is least squares, which gave us an Rsquared value of 0.598.
@@ -288,6 +282,7 @@ Our model will contribute to a better general  understanding of the price in Air
 
 ## Part 4: Contributions
 Code: Jack, Debbie
+\
 Analysis: April, Alex
 
 
@@ -310,7 +305,7 @@ Analysis: April, Alex
 airbnb_5000_complete <- airbnb_5000_complete %>% select(-room_type, -host_response_time)
 ```
 
-Originally, the GAM algorithm could not run on our airbnb_complete_5000 dataset. We thought the large number of catergorical variables (and reference levels) prevented it from processing. Thus, we removed the less significant variables according to the least squares model. After trial and error, we found that the only variable that GAM had a problem with was `room_type`, so we removed this variable.
+Originally, the GAM algorithm could not run on our airbnb_5000_complete dataset. We thought the large number of catergorical variables (and reference levels) prevented it from processing. Thus, we removed the less significant variables according to the least squares model. After trial and error, we found that the variables that GAM had a problem with was `room_type` and `host_response_time`, so we removed these variables and made the GAM model runable. 
 
 #### Building the GAM model
 ```{r warning = FALSE, message = FALSE, fig.width = 8, fig.height = 12}
